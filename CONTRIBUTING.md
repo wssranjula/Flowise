@@ -30,7 +30,7 @@ Found an issue? [Report it](https://github.com/FlowiseAI/Flowise/issues/new/choo
 
 Not sure what to contribute? Some ideas:
 
--   Create new components from Langchain
+-   Create new components from `packages/components`
 -   Update existing components such as extending functionality, fixing bugs
 -   Add new chatflow ideas
 
@@ -40,7 +40,7 @@ Flowise has 3 different modules in a single mono repository.
 
 -   `server`: Node backend to serve API logics
 -   `ui`: React frontend
--   `components`: Langchain components
+-   `components`: Third-party nodes integrations
 
 #### Prerequisite
 
@@ -121,16 +121,19 @@ Flowise has 3 different modules in a single mono repository.
 Flowise support different environment variables to configure your instance. You can specify the following variables in the `.env` file inside `packages/server` folder. Read [more](https://docs.flowiseai.com/environment-variables)
 
 | Variable                    | Description                                                                  | Type                                             | Default                             |
-| --------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------- | --- |
+| --------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------- |
 | PORT                        | The HTTP port Flowise runs on                                                | Number                                           | 3000                                |
+| CORS_ORIGINS                | The allowed origins for all cross-origin HTTP calls                          | String                                           |                                     |
+| IFRAME_ORIGINS              | The allowed origins for iframe src embedding                                 | String                                           |                                     |
 | FLOWISE_USERNAME            | Username to login                                                            | String                                           |                                     |
 | FLOWISE_PASSWORD            | Password to login                                                            | String                                           |                                     |
+| FLOWISE_FILE_SIZE_LIMIT     | Upload File Size Limit                                                       | String                                           | 50mb                                |
 | DEBUG                       | Print logs from components                                                   | Boolean                                          |                                     |
 | LOG_PATH                    | Location where log files are stored                                          | String                                           | `your-path/Flowise/logs`            |
 | LOG_LEVEL                   | Different levels of logs                                                     | Enum String: `error`, `info`, `verbose`, `debug` | `info`                              |
 | APIKEY_PATH                 | Location where api keys are saved                                            | String                                           | `your-path/Flowise/packages/server` |
 | TOOL_FUNCTION_BUILTIN_DEP   | NodeJS built-in modules to be used for Tool Function                         | String                                           |                                     |
-| TOOL_FUNCTION_EXTERNAL_DEP  | External modules to be used for Tool Function                                | String                                           |                                     |     |
+| TOOL_FUNCTION_EXTERNAL_DEP  | External modules to be used for Tool Function                                | String                                           |                                     |
 | DATABASE_TYPE               | Type of database to store the flowise data                                   | Enum String: `sqlite`, `mysql`, `postgres`       | `sqlite`                            |
 | DATABASE_PATH               | Location where database is saved (When DATABASE_TYPE is sqlite)              | String                                           | `your-home-dir/.flowise`            |
 | DATABASE_HOST               | Host URL or IP address (When DATABASE_TYPE is not sqlite)                    | String                                           |                                     |
@@ -138,8 +141,11 @@ Flowise support different environment variables to configure your instance. You 
 | DATABASE_USER               | Database username (When DATABASE_TYPE is not sqlite)                         | String                                           |                                     |
 | DATABASE_PASSWORD           | Database password (When DATABASE_TYPE is not sqlite)                         | String                                           |                                     |
 | DATABASE_NAME               | Database name (When DATABASE_TYPE is not sqlite)                             | String                                           |                                     |
+| DATABASE_SSL_KEY_BASE64     | Database SSL client cert in base64 (takes priority over DATABASE_SSL)        | Boolean                                          | false                               |
+| DATABASE_SSL                | Database connection overssl (When DATABASE_TYPE is postgre)                  | Boolean                                          | false                               |
 | SECRETKEY_PATH              | Location where encryption key (used to encrypt/decrypt credentials) is saved | String                                           | `your-path/Flowise/packages/server` |
 | FLOWISE_SECRETKEY_OVERWRITE | Encryption key to be used instead of the key stored in SECRETKEY_PATH        | String                                           |
+| DISABLE_FLOWISE_TELEMETRY   | Turn off telemetry                                                           | Boolean                                          |
 
 You can also specify the env variables when using `npx`. For example:
 

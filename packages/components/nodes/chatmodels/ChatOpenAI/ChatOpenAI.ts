@@ -1,6 +1,8 @@
+import { ChatOpenAI, OpenAIChatInput } from '@langchain/openai'
+import { BaseCache } from '@langchain/core/caches'
+import { BaseLLMParams } from '@langchain/core/language_models/llms'
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src/utils'
-import { ChatOpenAI, OpenAIChatInput } from 'langchain/chat_models/openai'
 
 class ChatOpenAI_ChatModels implements INode {
     label: string
@@ -17,9 +19,9 @@ class ChatOpenAI_ChatModels implements INode {
     constructor() {
         this.label = 'ChatOpenAI'
         this.name = 'chatOpenAI'
-        this.version = 1.0
+        this.version = 4.0
         this.type = 'ChatOpenAI'
-        this.icon = 'openai.png'
+        this.icon = 'openai.svg'
         this.category = 'Chat Models'
         this.description = 'Wrapper around OpenAI large language models that use the Chat endpoint'
         this.baseClasses = [this.type, ...getBaseClasses(ChatOpenAI)]
@@ -31,6 +33,12 @@ class ChatOpenAI_ChatModels implements INode {
         }
         this.inputs = [
             {
+                label: 'Cache',
+                name: 'cache',
+                type: 'BaseCache',
+                optional: true
+            },
+            {
                 label: 'Model Name',
                 name: 'modelName',
                 type: 'options',
@@ -38,6 +46,26 @@ class ChatOpenAI_ChatModels implements INode {
                     {
                         label: 'gpt-4',
                         name: 'gpt-4'
+                    },
+                    {
+                        label: 'gpt-4-turbo-preview',
+                        name: 'gpt-4-turbo-preview'
+                    },
+                    {
+                        label: 'gpt-4-0125-preview',
+                        name: 'gpt-4-0125-preview'
+                    },
+                    {
+                        label: 'gpt-4-1106-preview',
+                        name: 'gpt-4-1106-preview'
+                    },
+                    {
+                        label: 'gpt-4-1106-vision-preview',
+                        name: 'gpt-4-1106-vision-preview'
+                    },
+                    {
+                        label: 'gpt-4-vision-preview',
+                        name: 'gpt-4-vision-preview'
                     },
                     {
                         label: 'gpt-4-0613',
@@ -54,6 +82,14 @@ class ChatOpenAI_ChatModels implements INode {
                     {
                         label: 'gpt-3.5-turbo',
                         name: 'gpt-3.5-turbo'
+                    },
+                    {
+                        label: 'gpt-3.5-turbo-0125',
+                        name: 'gpt-3.5-turbo-0125'
+                    },
+                    {
+                        label: 'gpt-3.5-turbo-1106',
+                        name: 'gpt-3.5-turbo-1106'
                     },
                     {
                         label: 'gpt-3.5-turbo-0613',
@@ -151,7 +187,9 @@ class ChatOpenAI_ChatModels implements INode {
         const credentialData = await getCredentialData(nodeData.credential ?? '', options)
         const openAIApiKey = getCredentialParam('openAIApiKey', credentialData, nodeData)
 
-        const obj: Partial<OpenAIChatInput> & { openAIApiKey?: string } = {
+        const cache = nodeData.inputs?.cache as BaseCache
+
+        const obj: Partial<OpenAIChatInput> & BaseLLMParams & { openAIApiKey?: string } = {
             temperature: parseFloat(temperature),
             modelName,
             openAIApiKey,
@@ -163,6 +201,7 @@ class ChatOpenAI_ChatModels implements INode {
         if (frequencyPenalty) obj.frequencyPenalty = parseFloat(frequencyPenalty)
         if (presencePenalty) obj.presencePenalty = parseFloat(presencePenalty)
         if (timeout) obj.timeout = parseInt(timeout, 10)
+        if (cache) obj.cache = cache
 
         let parsedBaseOptions: any | undefined = undefined
 

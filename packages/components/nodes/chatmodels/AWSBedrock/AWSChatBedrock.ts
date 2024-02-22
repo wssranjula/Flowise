@@ -1,7 +1,9 @@
+import { BedrockChat } from '@langchain/community/chat_models/bedrock'
+import { BaseCache } from '@langchain/core/caches'
+import { BaseChatModelParams } from '@langchain/core/language_models/chat_models'
+import { BaseBedrockInput } from 'langchain/dist/util/bedrock'
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src/utils'
-import { ChatBedrock } from 'langchain/chat_models/bedrock'
-import { BaseBedrockInput } from 'langchain/dist/util/bedrock'
 
 /**
  * I had to run the following to build the component
@@ -23,14 +25,14 @@ class AWSChatBedrock_ChatModels implements INode {
     inputs: INodeParams[]
 
     constructor() {
-        this.label = 'AWS Bedrock'
+        this.label = 'AWS ChatBedrock'
         this.name = 'awsChatBedrock'
-        this.version = 1.1
+        this.version = 3.0
         this.type = 'AWSChatBedrock'
-        this.icon = 'awsBedrock.png'
+        this.icon = 'aws.svg'
         this.category = 'Chat Models'
-        this.description = 'Wrapper around AWS Bedrock large language models'
-        this.baseClasses = [this.type, ...getBaseClasses(ChatBedrock)]
+        this.description = 'Wrapper around AWS Bedrock large language models that use the Chat endpoint'
+        this.baseClasses = [this.type, ...getBaseClasses(BedrockChat)]
         this.credential = {
             label: 'AWS Credential',
             name: 'credential',
@@ -39,6 +41,12 @@ class AWSChatBedrock_ChatModels implements INode {
             optional: true
         }
         this.inputs = [
+            {
+                label: 'Cache',
+                name: 'cache',
+                type: 'BaseCache',
+                optional: true
+            },
             {
                 label: 'Region',
                 name: 'region',
@@ -80,27 +88,26 @@ class AWSChatBedrock_ChatModels implements INode {
                     { label: 'us-west-1', name: 'us-west-1' },
                     { label: 'us-west-2', name: 'us-west-2' }
                 ],
-                default: 'us-east-1',
-                optional: false
+                default: 'us-east-1'
             },
             {
                 label: 'Model Name',
                 name: 'model',
                 type: 'options',
                 options: [
-                    { label: 'amazon.titan-tg1-large', name: 'amazon.titan-tg1-large' },
-                    { label: 'amazon.titan-e1t-medium', name: 'amazon.titan-e1t-medium' },
-                    { label: 'stability.stable-diffusion-xl', name: 'stability.stable-diffusion-xl' },
-                    { label: 'ai21.j2-grande-instruct', name: 'ai21.j2-grande-instruct' },
-                    { label: 'ai21.j2-jumbo-instruct', name: 'ai21.j2-jumbo-instruct' },
-                    { label: 'ai21.j2-mid', name: 'ai21.j2-mid' },
-                    { label: 'ai21.j2-ultra', name: 'ai21.j2-ultra' },
                     { label: 'anthropic.claude-instant-v1', name: 'anthropic.claude-instant-v1' },
                     { label: 'anthropic.claude-v1', name: 'anthropic.claude-v1' },
-                    { label: 'anthropic.claude-v2', name: 'anthropic.claude-v2' }
+                    { label: 'anthropic.claude-v2', name: 'anthropic.claude-v2' },
+                    { label: 'meta.llama2-13b-chat-v1', name: 'meta.llama2-13b-chat-v1' }
                 ],
-                default: 'anthropic.claude-v2',
-                optional: false
+                default: 'anthropic.claude-v2'
+            },
+            {
+                label: 'Custom Model Name',
+                name: 'customModel',
+                description: 'If provided, will override model selected from Model Name option',
+                type: 'string',
+                optional: true
             },
             {
                 label: 'Temperature',
@@ -109,8 +116,8 @@ class AWSChatBedrock_ChatModels implements INode {
                 step: 0.1,
                 description: 'Temperature parameter may not apply to certain model. Please check available model parameters',
                 optional: true,
-                default: 0.7,
-                additionalParams: false
+                additionalParams: true,
+                default: 0.7
             },
             {
                 label: 'Max Tokens to Sample',
@@ -118,9 +125,9 @@ class AWSChatBedrock_ChatModels implements INode {
                 type: 'number',
                 step: 10,
                 description: 'Max Tokens parameter may not apply to certain model. Please check available model parameters',
-                optional: false,
-                default: 200,
-                additionalParams: false
+                optional: true,
+                additionalParams: true,
+                default: 200
             }
         ]
     }
@@ -128,14 +135,18 @@ class AWSChatBedrock_ChatModels implements INode {
     async init(nodeData: INodeData, _: string, options: ICommonObject): Promise<any> {
         const iRegion = nodeData.inputs?.region as string
         const iModel = nodeData.inputs?.model as string
+        const customModel = nodeData.inputs?.customModel as string
         const iTemperature = nodeData.inputs?.temperature as string
         const iMax_tokens_to_sample = nodeData.inputs?.max_tokens_to_sample as string
+        const cache = nodeData.inputs?.cache as BaseCache
+        const streaming = nodeData.inputs?.streaming as boolean
 
-        const obj: BaseBedrockInput = {
+        const obj: BaseBedrockInput & BaseChatModelParams = {
             region: iRegion,
-            model: iModel,
+            model: customModel ? customModel : iModel,
             maxTokens: parseInt(iMax_tokens_to_sample, 10),
-            temperature: parseFloat(iTemperature)
+            temperature: parseFloat(iTemperature),
+            streaming: streaming ?? true
         }
 
         /**
@@ -157,8 +168,9 @@ class AWSChatBedrock_ChatModels implements INode {
                 sessionToken: credentialApiSession
             }
         }
+        if (cache) obj.cache = cache
 
-        const amazonBedrock = new ChatBedrock(obj)
+        const amazonBedrock = new BedrockChat(obj)
         return amazonBedrock
     }
 }

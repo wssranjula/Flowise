@@ -16,8 +16,14 @@ const APIKey = Loadable(lazy(() => import('views/apikey')))
 // tools routing
 const Tools = Loadable(lazy(() => import('views/tools')))
 
+// assistants routing
+const Assistants = Loadable(lazy(() => import('views/assistants')))
+
 // credentials routing
 const Credentials = Loadable(lazy(() => import('views/credentials')))
+
+// variables routing
+const Variables = Loadable(lazy(() => import('views/variables')))
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -46,8 +52,16 @@ const MainRoutes = {
             element: <Tools />
         },
         {
+            path: '/assistants',
+            element: <Assistants />
+        },
+        {
             path: '/credentials',
             element: <Credentials />
+        },
+        {
+            path: '/variables',
+            element: <Variables />
         }
     ]
 }

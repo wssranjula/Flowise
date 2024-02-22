@@ -1,10 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { FormControl, OutlinedInput } from '@mui/material'
-import ExpandTextDialog from 'ui-component/dialog/ExpandTextDialog'
+import { FormControl, OutlinedInput, InputBase, Popover } from '@mui/material'
+import SelectVariable from 'ui-component/json/SelectVariable'
+import { getAvailableNodesForVariable } from 'utils/genericHelper'
 
-export const Input = ({ inputParam, value, onChange, disabled = false, showDialog, dialogProps, onDialogCancel, onDialogConfirm }) => {
+export const Input = ({ inputParam, value, nodes, edges, nodeId, onChange, disabled = false }) => {
     const [myValue, setMyValue] = useState(value ?? '')
+    const [anchorEl, setAnchorEl] = useState(null)
+    const [availableNodesForVariable, setAvailableNodesForVariable] = useState([])
+    const ref = useRef(null)
+
+    const openPopOver = Boolean(anchorEl)
+
+    const handleClosePopOver = () => {
+        setAnchorEl(null)
+    }
+
+    const setNewVal = (val) => {
+        const newVal = myValue + val.substring(2)
+        onChange(newVal)
+        setMyValue(newVal)
+    }
 
     const getInputType = (type) => {
         switch (type) {
@@ -19,41 +35,106 @@ export const Input = ({ inputParam, value, onChange, disabled = false, showDialo
         }
     }
 
+    useEffect(() => {
+        if (!disabled && nodes && edges && nodeId && inputParam) {
+            const nodesForVariable = inputParam?.acceptVariable ? getAvailableNodesForVariable(nodes, edges, nodeId, inputParam.id) : []
+            setAvailableNodesForVariable(nodesForVariable)
+        }
+    }, [disabled, inputParam, nodes, edges, nodeId])
+
+    useEffect(() => {
+        if (typeof myValue === 'string' && myValue && myValue.endsWith('{{')) {
+            setAnchorEl(ref.current)
+        }
+    }, [myValue])
+
     return (
         <>
-            <FormControl sx={{ mt: 1, width: '100%' }} size='small'>
-                <OutlinedInput
-                    id={inputParam.name}
-                    size='small'
-                    disabled={disabled}
-                    type={getInputType(inputParam.type)}
-                    placeholder={inputParam.placeholder}
-                    multiline={!!inputParam.rows}
-                    rows={inputParam.rows ?? 1}
-                    value={myValue}
-                    name={inputParam.name}
-                    onChange={(e) => {
-                        setMyValue(e.target.value)
-                        onChange(e.target.value)
+            {inputParam.name === 'note' ? (
+                <FormControl sx={{ width: '100%', height: 'auto' }} size='small'>
+                    <InputBase
+                        id={nodeId}
+                        size='small'
+                        disabled={disabled}
+                        type={getInputType(inputParam.type)}
+                        placeholder={inputParam.placeholder}
+                        multiline={!!inputParam.rows}
+                        minRows={inputParam.rows ?? 1}
+                        value={myValue}
+                        name={inputParam.name}
+                        onChange={(e) => {
+                            setMyValue(e.target.value)
+                            onChange(e.target.value)
+                        }}
+                        inputProps={{
+                            step: inputParam.step ?? 1,
+                            style: {
+                                border: 'none',
+                                background: 'none',
+                                color: '#212121'
+                            }
+                        }}
+                        sx={{
+                            border: 'none',
+                            background: 'none',
+                            padding: '10px 14px',
+                            textarea: {
+                                '&::placeholder': {
+                                    color: '#616161'
+                                }
+                            }
+                        }}
+                    />
+                </FormControl>
+            ) : (
+                <FormControl sx={{ mt: 1, width: '100%' }} size='small'>
+                    <OutlinedInput
+                        id={inputParam.name}
+                        size='small'
+                        disabled={disabled}
+                        type={getInputType(inputParam.type)}
+                        placeholder={inputParam.placeholder}
+                        multiline={!!inputParam.rows}
+                        rows={inputParam.rows ?? 1}
+                        value={myValue}
+                        name={inputParam.name}
+                        onChange={(e) => {
+                            setMyValue(e.target.value)
+                            onChange(e.target.value)
+                        }}
+                        inputProps={{
+                            step: inputParam.step ?? 1,
+                            style: {
+                                height: inputParam.rows ? '90px' : 'inherit'
+                            }
+                        }}
+                    />
+                </FormControl>
+            )}
+            <div ref={ref}></div>
+            {inputParam?.acceptVariable && (
+                <Popover
+                    open={openPopOver}
+                    anchorEl={anchorEl}
+                    onClose={handleClosePopOver}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'left'
                     }}
-                    inputProps={{
-                        step: inputParam.step ?? 1,
-                        style: {
-                            height: inputParam.rows ? '90px' : 'inherit'
-                        }
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'left'
                     }}
-                />
-            </FormControl>
-            {showDialog && (
-                <ExpandTextDialog
-                    show={showDialog}
-                    dialogProps={dialogProps}
-                    onCancel={onDialogCancel}
-                    onConfirm={(newValue, inputParamName) => {
-                        setMyValue(newValue)
-                        onDialogConfirm(newValue, inputParamName)
-                    }}
-                ></ExpandTextDialog>
+                >
+                    <SelectVariable
+                        disabled={disabled}
+                        availableNodesForVariable={availableNodesForVariable}
+                        onSelectAndReturnVal={(val) => {
+                            setNewVal(val)
+                            handleClosePopOver()
+                        }}
+                    />
+                </Popover>
             )}
         </>
     )
@@ -64,8 +145,7 @@ Input.propTypes = {
     value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     onChange: PropTypes.func,
     disabled: PropTypes.bool,
-    showDialog: PropTypes.bool,
-    dialogProps: PropTypes.object,
-    onDialogCancel: PropTypes.func,
-    onDialogConfirm: PropTypes.func
+    nodes: PropTypes.array,
+    edges: PropTypes.array,
+    nodeId: PropTypes.string
 }

@@ -2,6 +2,10 @@ import { ICommonObject, INode, INodeData as INodeDataFromComponent, INodeParams 
 
 export type MessageType = 'apiMessage' | 'userMessage'
 
+export enum chatType {
+    INTERNAL = 'INTERNAL',
+    EXTERNAL = 'EXTERNAL'
+}
 /**
  * Databases
  */
@@ -24,8 +28,14 @@ export interface IChatMessage {
     role: MessageType
     content: string
     chatflowid: string
-    createdDate: Date
     sourceDocuments?: string
+    usedTools?: string
+    fileAnnotations?: string
+    chatType: string
+    chatId: string
+    memoryType?: string
+    sessionId?: string
+    createdDate: Date
 }
 
 export interface ITool {
@@ -40,11 +50,29 @@ export interface ITool {
     createdDate: Date
 }
 
+export interface IAssistant {
+    id: string
+    details: string
+    credential: string
+    iconSrc?: string
+    updatedDate: Date
+    createdDate: Date
+}
+
 export interface ICredential {
     id: string
     name: string
     credentialName: string
     encryptedData: string
+    updatedDate: Date
+    createdDate: Date
+}
+
+export interface IVariable {
+    id: string
+    name: string
+    value: string
+    type: string
     updatedDate: Date
     createdDate: Date
 }
@@ -146,15 +174,21 @@ export interface IncomingInput {
     history: IMessage[]
     overrideConfig?: ICommonObject
     socketIOClientId?: string
+    chatId?: string
+    stopNodeId?: string
 }
 
 export interface IActiveChatflows {
     [key: string]: {
         startingNodes: IReactFlowNode[]
-        endingNodeData: INodeData
+        endingNodeData?: INodeData
         inSync: boolean
         overrideConfig?: ICommonObject
     }
+}
+
+export interface IActiveCache {
+    [key: string]: Map<any, any>
 }
 
 export interface IOverrideConfig {
@@ -163,12 +197,6 @@ export interface IOverrideConfig {
     label: string
     name: string
     type: string
-}
-
-export interface IDatabaseExport {
-    chatmessages: IChatMessage[]
-    chatflows: IChatFlow[]
-    apikeys: ICommonObject[]
 }
 
 export type ICredentialDataDecrypted = ICommonObject
